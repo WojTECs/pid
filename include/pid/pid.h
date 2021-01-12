@@ -1,0 +1,42 @@
+#ifndef PID_H
+#define PID_H
+
+#include <dynamic_reconfigure/server.h>
+#include <pid/pidConfig.h>
+
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <iostream>
+#include <thread>
+#include <pid/DEMA.h>
+
+class PID {
+ public:
+  PID();
+
+  void update(double _data);
+  void setPoint(double _point);
+  double getControll() const;
+  operator double() const;
+
+ private:
+  double Kp_, Ki_, Kd_;
+  double upperLimit_, lowerLimit_;
+  double windupLimit_;
+  double integral_, derivative_, error_, prevError_, control_,
+      point_,alfa_;
+  bool upLimitOn, downLimitOn, windupOn;
+  DEMAFilter derivFilter_;
+  // time
+  std::chrono::steady_clock::duration dt_;
+  std::chrono::steady_clock::time_point prevTime_;
+  std::chrono::duration<double> timeout_;
+  void reconfigCallback(pid::pidConfig &cfg, uint32_t level);
+  dynamic_reconfigure::Server<pid::pidConfig> pidCfgServer_;
+  dynamic_reconfigure::Server<pid::pidConfig>::CallbackType f;
+
+  // double maxHz_, minHz_;
+};
+
+#endif
