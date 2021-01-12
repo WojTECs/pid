@@ -1,16 +1,18 @@
 #include <pid/pid.h>
 
-PID::PID()
-    : integral_(0)
-    , derivative_(0)
-    , error_(0)
-    , prevError_(0)
-    , control_(0)
-    , point_(0)
-    , prevTime_(std::chrono::steady_clock::now())
-    , derivFilter_(0.001) {
+PID::PID(std::string name)
+  : integral_(0)
+  , derivative_(0)
+  , error_(0)
+  , prevError_(0)
+  , control_(0)
+  , point_(0)
+  , prevTime_(std::chrono::steady_clock::now())
+  , derivFilter_(0.001) {
+  ros::NodeHandle priv_nh(name.c_str());
+  pidCfgServer_.reset(new dynamic_reconfigure::Server<pid::pidConfig>(priv_nh));
   f = boost::bind(&PID::reconfigCallback, this, _1, _2);
-  pidCfgServer_.setCallback(f);
+  pidCfgServer_->setCallback(f);
   pid::pidConfig::DEFAULT def;
   Kp_ = def.Kp;
   Ki_ = def.Ki;
