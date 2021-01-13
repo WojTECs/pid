@@ -17,6 +17,7 @@ class PID {
 
   void update(double _data);
   void setPoint(double _point);
+  double getPoint() const;
   double getControll() const;
   operator double() const;
 
