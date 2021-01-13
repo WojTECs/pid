@@ -13,7 +13,7 @@
 
 class PID {
  public:
-  PID(std::string name);
+  PID(ros::NodeHandle &nh, std::string name);
 
   void update(double _data);
   void setPoint(double _point);

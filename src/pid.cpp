@@ -1,6 +1,6 @@
 #include "pid/pid.h"
 
-PID::PID(std::string name)
+PID::PID(ros::NodeHandle &nh, std::string name)
     : integral_(0)
     , derivative_(0)
     , error_(0)
@@ -9,7 +9,7 @@ PID::PID(std::string name)
     , point_(0)
     , prevTime_(std::chrono::steady_clock::now())
     , derivFilter_(0.001) {
-  ros::NodeHandle priv_nh(name.c_str());
+  ros::NodeHandle priv_nh(nh, name.c_str());
   pidCfgServer_.reset(new dynamic_reconfigure::Server<pid::pidConfig>(priv_nh));
   f = boost::bind(&PID::reconfigCallback, this, _1, _2);
   pidCfgServer_->setCallback(f);
@@ -60,7 +60,7 @@ void PID::update(double _data) {
   derivative_ = (error_ - prevError_) / (dt_.count() / 1000000000.0);
   prevError_ = error_;
   derivFilter_.filter(derivative_);
-  std::cout << "derivative: " << derivative_ << std::endl;
+  // std::cout << "derivative: " << derivative_ << std::endl;
   control_ = Kp_ * error_ + Ki_ * integral_ + Kd_ * derivFilter_.getOutput();
 
   if (control_ > upperLimit_ && upLimitOn) {

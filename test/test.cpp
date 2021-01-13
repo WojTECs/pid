@@ -12,13 +12,13 @@ void posCb(const geometry_msgs::Twist::ConstPtr &msg) { accPos = msg->linear.x; 
 void setP(const std_msgs::Float64ConstPtr &msg) { goal = msg->data; }
 int main(int argc, char **argv) {
   ros::init(argc, argv, "pid");
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
   ros::Subscriber pos = nh.subscribe("/pos", 1, posCb);
   ros::Subscriber setpoint = nh.subscribe("/set", 1, setP);
   ros::Publisher ctrl = nh.advertise<std_msgs::Float64>("/ctrl", 1);
   std_msgs::Float64 msg;
-  PID pid("left");
-  PID pid2("right");
+  PID pid(nh, "left");
+  PID pid2(nh, "right");
 
   ros::Rate r(100);
   while (ros::ok()) {

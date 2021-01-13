@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+
+    <node name="pid_test" pkg="pid" type="pid_node" output="screen" respawn="true">
+        <rosparam file="$(find pid)/cfg/params.yaml" subst_value="true" command="load" />
+    </node>
+
+</launch>
