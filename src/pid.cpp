@@ -34,43 +34,101 @@ void PID::reconfigCallback(pid::pidConfig &cfg, uint32_t level) {
   upLimitOn = cfg.upLimitOn;
   downLimitOn = cfg.downLimitOn;
   windupOn = cfg.windupOn;
+  alfa_ = cfg.alfa;
   derivFilter_.setAlpha(cfg.alfa);
 }
-void PID::update(double _data) {
+void PID::update(double _data)
+{
   dt_ = std::chrono::steady_clock::now() - prevTime_;
   // std::cout << "DT: " << dt_.count() / 1000000000.0 << std::endl;
   prevTime_ = std::chrono::steady_clock::now();
 
-  if (dt_ > timeout_) {
+  if (dt_ > timeout_)
+  {
     std::cout << "timeout" << std::endl;
     return;
   }
-  error_ = point_ - _data;
-  // dt.count() / 1000000000.0 = dt in seconds
-  integral_ += error_ * dt_.count() / 1000000000.0;
+  
 
-  if (windupOn) {
-    if (integral_ > abs(windupLimit_)) {
-      integral_ = abs(windupLimit_);
+  if ((prevPoint_ > 0 && point_ < 0) || (prevPoint_ < 0 && point_ > 0)) {
+    sum_ = 0;
+  }
+
+  if (abs(point_) < 1){
+    point_ = 0;
+    sum_ = 0;
+  }
+  prevPoint_ = point_;
+  error_ = point_ - _data;
+
+  
+  // dt.count() / 1000000000.0 = dt in seconds
+  sum_ += error_ * dt_.count() / 1000000000.0;
+
+  if (windupOn)
+  {
+    if (sum_ > abs(windupLimit_))
+    {
+      sum_ = abs(windupLimit_);
     }
-    if (integral_ < -abs(windupLimit_)) {
-      integral_ = -abs(windupLimit_);
+    if (sum_ < -abs(windupLimit_))
+    {
+      sum_ = -abs(windupLimit_);
     }
   }
-  derivative_ = (error_ - prevError_) / (dt_.count() / 1000000000.0);
-  prevError_ = error_;
-  derivFilter_.filter(derivative_);
-  // std::cout << "derivative: " << derivative_ << std::endl;
-  control_ = Kp_ * error_ + Ki_ * integral_ + Kd_ * derivFilter_.getOutput();
+  //Ti_ = Kp_ / Ki_;
+  integral_ = Ki_ * sum_ ;
 
-  if (control_ > upperLimit_ && upLimitOn) {
+  if (Kd_ > 0.00000001 && alfa_ > 0.00000001)
+  {
+    Td_ = Kd_ / Kp_;
+    derivative_ = Kd_ * ((error_ - prevError_) + (alfa_ * Td_ * prevDerivative_)) / (Td_ * alfa_ + (dt_.count() / 1000000000.0));
+    if (derivative_ > upperLimit_)
+    {
+      derivative_ = upperLimit_;
+    }
+    if (derivative_ < lowerLimit_)
+    {
+      derivative_ = lowerLimit_;
+    } 
+  }
+  else  
+  {
+    derivative_ = 0.0;
+  }
+  prevDerivative_ = derivative_;
+  prevError_ = error_;
+
+  // std::cout << "e - pe: " << (error_ - prevError_) << "\t a*Td*pD: " << alfa_ * Td_ * prevDerivative_ << 
+  //   "\t Td*a: " << Td_ * alfa_ << "\t Td*a*dt: " << (Td_ * alfa_ + (dt_.count() / 1000000000.0)) << "\t der " << derivative_ << "\t KD " << Kd_ << "\n";
+
+
+
+  // derivFilter_.filter(derivative_);
+
+  // control_ = Kp_ * error_ + Ki_ * integral_ + Kd_ * derivFilter_.getOutput();
+  // Ki = Kp/Ti;
+  // Kd = Td*Kp;
+  control_ = Kp_ * error_ + integral_ + derivative_;
+
+  //std::cout << "Control: " << control_ << "\t Data: " << _data << "\t error: " << error_ << "\t integral: " << integral_ << "\t derivative " << derivative_ << "\n";
+
+  if (control_ > upperLimit_ && upLimitOn)
+  {
+    sum_ -= abs(error_);
     control_ = upperLimit_;
   }
-  if (control_ < lowerLimit_ && downLimitOn) {
+  if (control_ < lowerLimit_ && downLimitOn)
+  {
+    sum_ += abs(error_);
     control_ = lowerLimit_;
   }
 }
-void PID::setPoint(double _point) { point_ = _point; }
+void PID::setPoint(double _point) {
+  point_ = _point; 
+
+}
+
 double PID::getControll() const { return control_; }
 PID::operator double() const { return control_; }
 double PID::getPoint() const { return point_; }
