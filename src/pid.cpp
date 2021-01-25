@@ -1,29 +1,76 @@
 #include "pid/pid.h"
 
 PID::PID(ros::NodeHandle &nh, std::string name)
-    : integral_(0)
-    , derivative_(0)
-    , error_(0)
-    , prevError_(0)
-    , control_(0)
-    , point_(0)
-    , prevTime_(std::chrono::steady_clock::now())
-    , derivFilter_(0.001) {
+    : integral_(0), derivative_(0), error_(0), prevError_(0), control_(0), point_(0), prevTime_(std::chrono::steady_clock::now()), derivFilter_(0.001)
+{
   ros::NodeHandle priv_nh(nh, name.c_str());
   pidCfgServer_.reset(new dynamic_reconfigure::Server<pid::pidConfig>(priv_nh));
   f = boost::bind(&PID::reconfigCallback, this, _1, _2);
   pidCfgServer_->setCallback(f);
+
   pid::pidConfig::DEFAULT def;
   Kp_ = def.Kp;
   Ki_ = def.Ki;
   Kd_ = def.Kd;
+
   upperLimit_ = def.upperLimit;
   lowerLimit_ = def.lowerLimit;
   windupLimit_ = def.windup;
+  upLimitOn = def.upLimitOn;
+  downLimitOn = def.downLimitOn;
+  windupOn = def.windupOn;
+  alfa_ = def.alfa;
   timeout_ = std::chrono::duration<double>(2);
+
+  if (!priv_nh.getParam("Kp", Kp_)) {
+    ROS_WARN_STREAM("Can not find Kp, setting default: " << Kp_);
+  }
+  if (!priv_nh.getParam("Ki", Ki_)) {
+    ROS_WARN_STREAM("Can not find Ki, setting default: " << Ki_);
+  }
+  if (!priv_nh.getParam("Kd", Kd_)) {
+    ROS_WARN_STREAM("Can not find Kp, setting default: " << Kd_);
+  }
+    if (!priv_nh.getParam("upperLimit", upperLimit_)) {
+    ROS_WARN_STREAM("Can not find upperLimit, setting default: " << upperLimit_);
+  }
+
+  if (!priv_nh.getParam("lowerLimit", lowerLimit_)) {
+    ROS_WARN_STREAM("Can not find lowerLimit, setting default: " << lowerLimit_);
+  }
+
+  if (!priv_nh.getParam("windup", windupLimit_)) {
+    ROS_WARN_STREAM("Can not find windup, setting default: " << windupLimit_);
+  }
+
+  if (!priv_nh.getParam("upLimitOn", upLimitOn)) {
+    ROS_WARN_STREAM("Can not find upLimitOn, setting default: " << upLimitOn);
+  }
+
+  if (!priv_nh.getParam("downLimitOn", downLimitOn)) {
+    ROS_WARN_STREAM("Can not find downLimitOn, setting default: " << downLimitOn);
+  }
+
+  if (!priv_nh.getParam("windupOn", windupOn)) {
+    ROS_WARN_STREAM("Can not find windupOn, setting default: " << windupOn);
+  }
+
+  if (!priv_nh.getParam("alfa", alfa_)) {
+    ROS_WARN_STREAM("Can not find alfa, setting default: " << alfa_);
+  }
+
+  double timeoutVal = 2; 
+  if (!priv_nh.getParam("timeout", timeoutVal)) {
+    ROS_WARN_STREAM("Can not find timeout, setting default: " << timeoutVal);
+  }
+  timeout_ = std::chrono::duration<double>(timeoutVal);
+
+  prevDerivative_ = 0.0;
   derivFilter_.setAlpha(def.alfa);
+
 }
-void PID::reconfigCallback(pid::pidConfig &cfg, uint32_t level) {
+void PID::reconfigCallback(pid::pidConfig &cfg, uint32_t level)
+{
   Kp_ = cfg.Kp;
   Ki_ = cfg.Ki;
   Kd_ = cfg.Kd;
