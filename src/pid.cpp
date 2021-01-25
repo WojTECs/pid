@@ -96,7 +96,6 @@ void PID::update(double _data)
     return;
   }
   
-
   if ((prevPoint_ > 0 && point_ < 0) || (prevPoint_ < 0 && point_ > 0)) {
     sum_ = 0;
   }
@@ -123,7 +122,7 @@ void PID::update(double _data)
       sum_ = -abs(windupLimit_);
     }
   }
-  //Ti_ = Kp_ / Ki_;
+  // Ti_ = Kp_ / Ki_;
   integral_ = Ki_ * sum_ ;
 
   if (Kd_ > 0.00000001 && alfa_ > 0.00000001)
@@ -149,11 +148,6 @@ void PID::update(double _data)
   // std::cout << "e - pe: " << (error_ - prevError_) << "\t a*Td*pD: " << alfa_ * Td_ * prevDerivative_ << 
   //   "\t Td*a: " << Td_ * alfa_ << "\t Td*a*dt: " << (Td_ * alfa_ + (dt_.count() / 1000000000.0)) << "\t der " << derivative_ << "\t KD " << Kd_ << "\n";
 
-
-
-  // derivFilter_.filter(derivative_);
-
-  // control_ = Kp_ * error_ + Ki_ * integral_ + Kd_ * derivFilter_.getOutput();
   // Ki = Kp/Ti;
   // Kd = Td*Kp;
   control_ = Kp_ * error_ + integral_ + derivative_;
@@ -171,11 +165,7 @@ void PID::update(double _data)
     control_ = lowerLimit_;
   }
 }
-void PID::setPoint(double _point) {
-  point_ = _point; 
-
-}
-
+void PID::setPoint(double _point) { point_ = _point; }
 double PID::getControll() const { return control_; }
 PID::operator double() const { return control_; }
 double PID::getPoint() const { return point_; }
