@@ -11,8 +11,9 @@
 #include <iostream>
 #include <thread>
 
-class PID {
- public:
+class PID
+{
+public:
   PID(ros::NodeHandle &nh, std::string name);
 
   void update(double _data);
@@ -21,11 +22,11 @@ class PID {
   double getControll() const;
   operator double() const;
 
- private:
-  double Kp_, Ki_, Kd_;
+private:
+  double Kp_, Ki_, Kd_, Ti_, Td_;
   double upperLimit_, lowerLimit_;
   double windupLimit_;
-  double integral_, derivative_, error_, prevError_, control_, point_, alfa_;
+  double integral_, derivative_, error_, sum_, prevError_, prevDerivative_, control_, point_, prevPoint_, alfa_;
   bool upLimitOn, downLimitOn, windupOn;
   DEMAFilter derivFilter_;
   // time
