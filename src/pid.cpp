@@ -96,14 +96,15 @@ void PID::update(double _data)
     return;
   }
   
-  if ((prevPoint_ > 0 && point_ < 0) || (prevPoint_ < 0 && point_ > 0)) {
+  if ((prevPoint_ > 0.01 && point_ < -0.01) || (prevPoint_ < -0.01 && point_ > 0.01)) {
     sum_ = 0;
   }
 
-  if (abs(point_) < 1){
+  if (abs(point_) < 0.1){
     point_ = 0;
     sum_ = 0;
   }
+
   prevPoint_ = point_;
   error_ = point_ - _data;
 
